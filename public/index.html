@@ -1,0 +1,31 @@
+<!doctype html>
+<html>
+<head>
+<title>Lute</title>
+<link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+<div id="container"></div>
+<script type="text/html" id="row-tpl">
+<button class="del">del</button>
+<span class="counter"></span>
+<% columns.forEach(function(column){ %>
+<input type="number" name="<%= column.name %>" value="<%= column.value %>" >
+<% }) %>
+<span class="result"></span>
+</script>
+<script type="text/html" id="container-tpl">
+<button class="undo">undo</button>
+<button class="redo">redo</button>
+<div id="wrap">
+<% _.each( columns, function(col){ %>
+    <h4><%- col.title %></h4>
+<% }) %>
+    <h4><%- row_result_title %></h4>
+</div>
+<div class="column_result"><h4>Sum</h4><div></div></div>
+</script>
+<script src="jquery.js"></script>
+<script src="bundle.js"></script>
+</body>
+</html>

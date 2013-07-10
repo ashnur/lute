@@ -1,0 +1,26 @@
+{
+  "name": "lute-app",
+  "version": "0.0.0",
+  "description": "dynamic, row based, preconfigurable calculator",
+  "main": "server.js",
+  "dependencies": {
+    "underscore": "~1.5.0",
+    "backbone": "~1.0.0",
+    "express": "~3.2.6",
+    "ecstatic": "~0.4.5",
+    "rationals": "~0.1.4",
+    "appcache-node": "0.0.2",
+    "nib": "~0.9.1",
+    "browserify": "~2.14.2",
+    "stylus": "~0.32.1",
+    "brfs": "0.0.6"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": "",
+  "author": "",
+  "license": "BSD"
+}
