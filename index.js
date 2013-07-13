@@ -39,7 +39,10 @@ void function(root){
             , precision: 3
         }
         , Backbone = require('backbone')
-        , Row = Backbone.Model.extend({
+
+    Backbone.Memento = require('backbone.memento')(Backbone, _)
+
+    var Row = Backbone.Model.extend({
             initialize: function(attrs){
                 this.listenTo(this, 'change', this.change)
             }
@@ -79,6 +82,7 @@ void function(root){
                 if ( this.get('__rowCounterValue') == 1 ) {
                     this.destroy()
                     collection.maintainDefaultRow()
+                    collection.trigger('updateColumnResult')
                     collection.save()
                 } else {
                     this.set({__rowCounterValue: this.get('__rowCounterValue')-1}, {counterEvent: true})
@@ -111,10 +115,12 @@ void function(root){
             }
             , template: _.template($('#row-tpl').html())
             , change: function(ev){
+                this.model.collection.store()
                 this.model.set(ev.target.name, ev.target.value)
             }
             , displayResult: function(){
-                this.result.text(this.model.getResult().toFixed(settings.precision))
+                var result = this.model.getResult()
+                this.result.text(result != 0 ? result.toFixed(settings.precision) : '')
             }
             , updateCounter: function(){
                 var count = this.model.get('__rowCounterValue')
@@ -144,8 +150,9 @@ void function(root){
                 this.id = attrs ? attrs.id : _.uniqueId('sheet')
                 if ( store.enabled ) {
                     var luteSheets = store.get('lute.sheets')
-                    this.store = luteSheets || {}
+                    this.localStore = luteSheets || {}
                 }
+                _.extend(this, new Backbone.Memento(this))
             }
             , maintainDefaultRow: function(){
                 var last = this.last()
@@ -164,10 +171,10 @@ void function(root){
                 }
             }
             , save: function(){
-                if ( this.store ) {
-                    this.store[this.id] = this.models
-                    store.set('lute.sheets', this.store)
-                    store.set('lute.activeSheet', this.store[this.id])
+                if ( this.localStore ) {
+                    this.localStore[this.id] = this.models
+                    store.set('lute.sheets', this.localStore)
+                    store.set('lute.activeSheet', this.localStore[this.id])
                 }
             }
         })
@@ -181,7 +188,22 @@ void function(root){
                 this.listenTo(this.collection, 'updateColumnResult', function(model){
                     this.updateColumnResult()
                 })
+                this.listenTo(this.collection, 'reset', this.reset)
 
+            }
+            , events: {
+                "click .redo": "redo"
+                , "click .undo": "undo"
+            }
+            , undo: function(){
+                var collection = this.collection
+                collection.undo()
+                collection.save()
+            }
+            , redo: function(){
+                var collection = this.collection
+                collection.redo()
+                collection.save()
             }
             , renderRow: function(model) {
                 var rowView = new RowView({ model: model})
@@ -206,7 +228,31 @@ void function(root){
                     model.trigger('displayResult')
                 }, this)
                 this.result = this.$('.column_result div')
+                this.updateColumnResult()
                 return this
+            }
+            , reset: function(collection, options){
+                function findModel(list){
+                    return function(cid){
+                        return _.find(list, function(m){ return m.cid == cid})
+                    }
+                }
+                var previous = options.previousModels
+                    , current = collection.models
+                    , oldids = _.pluck(previous, 'cid')
+                    , newids = _.pluck(current, 'cid')
+                    , removed = _.difference(oldids, newids).map(findModel(previous))
+                    , added = _.difference(newids, oldids).map(findModel(current))
+
+                removed.forEach(function(m){ m.destroy() })
+                added.map(function(m){
+                    this.renderRow(m)
+                    m.trigger('displayResult')
+                    m.trigger('updateCounter')
+                }, this)
+                this.updateColumnResult()
+
+
             }
         })
 
